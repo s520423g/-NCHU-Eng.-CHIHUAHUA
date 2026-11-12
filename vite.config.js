@@ -4,5 +4,6 @@ import { defineConfig } from 'vite'
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: '/-NCHU-Eng.-CHIHUAHUA/',
   plugins: [vue(), tailwindcss()],
 })
