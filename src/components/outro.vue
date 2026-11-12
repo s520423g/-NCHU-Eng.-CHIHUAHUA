@@ -10,43 +10,46 @@ const props = defineProps({
   photos: { type: Array, default: () => [] },
 })
 
-// 每張照片的位置，以「文字區塊」為基準（照草圖量的）
-// left / width：文字區塊寬度的 %（0 = 文字左緣、100 = 文字右緣，負數或超過 100 = 在文字外面）
-// top：文字區塊高度的 %（0 = 標題上緣、100 = 最後一行下緣）
+// 每張照片「中心點」的位置，以「文字區塊」為基準（照草圖上的紅圈量的）
+// x / width：文字區塊寬度的 %（0 = 文字左緣、100 = 文字右緣，負數或超過 100 = 在文字外面）
+// y：文字區塊高度的 %（0 = 標題上緣、100 = 最後一行下緣）
 // ratio：照片的寬 ÷ 高
 const LAYOUT = [
-  { left: 1.5, top: -5, width: 16.6, ratio: 1.6 }, // 1 標題左邊
-  { left: 74, top: -43, width: 17.7, ratio: 1.25 }, // 2 標題右上
-  { left: 111.6, top: 54, width: 19.7, ratio: 1.19 }, // 3 文字右邊
-  { left: -27, top: 79, width: 21.2, ratio: 1.46 }, // 4 文字左下
-  { left: 69, top: 121, width: 22.8, ratio: 1.54 }, // 5 文字下方
+  { x: 12, y: 10, width: 17, ratio: 1.6 }, // 1 標題左邊
+  { x: -4, y: 70, width: 17, ratio: 1.25 }, // 2 第 4 行左邊
+  { x: 76, y: 97, width: 17, ratio: 1.19 }, // 3 第 5 行右邊
+  { x: 95, y: 48, width: 17, ratio: 1.46 }, // 4 第 2、3 行右邊
+  { x: 80, y: 23, width: 17, ratio: 1.54 }, // 5 標題右下、第 1 行尾
 ]
 
-// 每張照片放大幾倍（以自己的中心為基準，位置排法不變）
-const SCALE = 1.4
+// 每張照片放大幾倍（以自己的中心為基準，位置不變）
+const SCALE = 1
 
-// 文字兩側放不下照片時（例如筆電、平板），照片改排在文字下方
-// 依照放大後照片最左、最右的位置，自動算出需要「文字寬度的幾倍」才放得下（再多留 8% 邊距）
-const extentLeft = Math.min(...LAYOUT.map((b) => b.left - (b.width * (SCALE - 1)) / 2))
-const extentRight = Math.max(...LAYOUT.map((b) => b.left + b.width + (b.width * (SCALE - 1)) / 2))
+// 文字兩側放不下照片時（例如手機），照片改排在文字下方
+// 依照照片最左、最右的位置，自動算出需要「文字寬度的幾倍」才放得下（再多留 8% 邊距）
+const extentLeft = Math.min(0, ...LAYOUT.map((b) => b.x - (b.width * SCALE) / 2))
+const extentRight = Math.max(100, ...LAYOUT.map((b) => b.x + (b.width * SCALE) / 2))
 const NEEDED_RATIO = (extentRight - extentLeft) / 100 + 0.08
+// 文字區塊最窄要有多寬，照片才散在兩側；再窄就改排到文字下方
+const MIN_TEXT_WIDTH = 480
 const sectionRef = useTemplateRef('section')
-const innerRef = useTemplateRef('inner')
 const stacked = ref(false)
 let ro = null
 
+// 文字區塊寬度會被限制在「可用寬度 ÷ NEEDED_RATIO」（見 CSS），
+// 太長的文字（例如網址）會自動換行，照片永遠放得下；只有畫面太窄時才改排在下面
 function checkFit() {
-  if (!sectionRef.value || !innerRef.value) return
-  const available = sectionRef.value.clientWidth
-  const textWidth = innerRef.value.offsetWidth
-  stacked.value = textWidth * NEEDED_RATIO > available
+  const el = sectionRef.value
+  if (!el) return
+  const cs = getComputedStyle(el)
+  const available = el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)
+  stacked.value = available / NEEDED_RATIO < MIN_TEXT_WIDTH
 }
 
 onMounted(() => {
   ro = new ResizeObserver(checkFit)
   ro.observe(sectionRef.value)
-  ro.observe(innerRef.value)
-  document.fonts?.ready.then(checkFit) // 字型載入後文字寬度會變，再量一次
+  checkFit()
 })
 
 onBeforeUnmount(() => ro?.disconnect())
@@ -54,8 +57,8 @@ onBeforeUnmount(() => ro?.disconnect())
 const photoStyle = (i) => {
   const box = LAYOUT[i]
   return {
-    left: `${box.left}%`,
-    top: `${box.top}%`,
+    left: `${box.x}%`,
+    top: `${box.y}%`,
     width: `${box.width}%`,
     aspectRatio: box.ratio,
     '--photo-scale': SCALE,
@@ -64,8 +67,13 @@ const photoStyle = (i) => {
 </script>
 
 <template>
-  <section ref="section" class="outro" :class="{ 'is-stacked': stacked }">
-    <div ref="inner" class="outro__inner">
+  <section
+    ref="section"
+    class="outro"
+    :class="{ 'is-stacked': stacked }"
+    :style="{ '--needed-ratio': NEEDED_RATIO }"
+  >
+    <div class="outro__inner">
       <h2 class="outro__title">{{ props.title }}</h2>
       <p v-for="(text, i) in props.paragraphs" :key="i" class="outro__text">{{ text }}</p>
 
@@ -90,8 +98,8 @@ const photoStyle = (i) => {
   min-height: 100vh;
   display: grid;
   place-items: center;
-  /* 上下多留空間給文字區塊外面的照片（下方的照片 5 比較低，所以下面留更多） */
-  padding: clamp(10rem, 28vh, 18rem) clamp(1.25rem, 5vw, 4rem) clamp(14rem, 40vh, 24rem);
+  /* 上下留一點空間（照片都在文字旁邊，不用留太多） */
+  padding: clamp(5rem, 14vh, 9rem) clamp(1.25rem, 5vw, 4rem);
   box-sizing: border-box;
   overflow-x: clip; /* 只裁左右，避免出現橫向捲軸；上下不裁，照片才不會被切掉 */
 }
@@ -103,6 +111,11 @@ const photoStyle = (i) => {
   max-width: min(100%, 1280px);
   text-align: center;
   color: #1a1a1a;
+}
+
+/* 照片散在兩側時：文字區塊不能太寬，要留位置給左右的照片（太長的字會換行） */
+.outro:not(.is-stacked) .outro__inner {
+  max-width: min(1280px, calc(100% / var(--needed-ratio)));
 }
 
 .outro__title,
@@ -143,7 +156,8 @@ const photoStyle = (i) => {
 .outro__photo {
   position: absolute;
   margin: 0;
-  transform: scale(var(--photo-scale, 1)); /* 以中心放大 */
+  /* left / top 是照片中心點：先往回移半張，再以中心放大 */
+  transform: translate(-50%, -50%) scale(var(--photo-scale, 1));
 }
 
 .outro__photo img {
