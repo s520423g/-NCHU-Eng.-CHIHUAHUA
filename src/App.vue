@@ -69,11 +69,11 @@ const collagePhotos = [collage1, collage2, collage3, collage4, collage5, collage
 
 // 最後一區的文字：每一個字串是一段
 const outroText = [
-  '1. https://www.dimensions.com/element/chihuahua',
-  '2. https://lyka.com.au/blog/chihuahua-breed-guide',
-  '3. https://www.facebook.com/groups/chihuahuaparents/posts/27418144597865873/',
-  '4. https://www.instagram.com/godgwawa?utm_source=ig_web_button_share_sheet&obrf=ZDNlZDc0MzIxNw==',
-  '5. Google Search: Chihuahua memes',
+  '1.Dimensions.com. (2026, July 21). Chihuahua. https://www.dimensions.com/element/chihuahua',
+  '2.Knight, H. (2026, February 26). Chihuahua breed insights: Care, personality & expert tips. Lyka. https://lyka.com.au/blog/chihuahua-breed-guide',
+  '3.Savannah Mahay. (2026, June 23). The difference between my two boys. Facebook. https://www.facebook.com/groups/chihuahuaparents/posts/27418144597865873/',
+  '4.GodGwawa [@godgwawa]. (n.d.). Posts. Instagram. Retrieved November 13, 2026, from https://www.instagram.com/godgwawa/',
+  '5.Google. (n.d.). [Chihuahua memes] [Search results]. Retrieved November 13, 2026, from https://www.google.com/search?q=chihuahua+memes',
 ]
 
 // 最後一區文字周圍的照片，順序對應位置：

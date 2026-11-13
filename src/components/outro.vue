@@ -135,6 +135,7 @@ const photoStyle = (i) => {
 
 .outro__text {
   margin: 0 0 1.1rem;
+  text-align: left; /* 參考資料靠左對齊，標題維持置中 */
   font-family: 'Cherry Bomb One', system-ui;
   font-size: clamp(1rem, 1.6vw, 1.2rem);
   line-height: 1.8;
